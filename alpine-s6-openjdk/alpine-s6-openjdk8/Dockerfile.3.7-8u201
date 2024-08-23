@@ -1,0 +1,7 @@
+FROM prireg:5000/alpine-s6-overlay:3.7-1.21.8.0
+
+ENV JAVA_ALPINE_VERSION 8.201.08-r1
+ENV JAVA_HOME /usr/lib/jvm/java-1.8-openjdk
+ENV PATH $PATH:$JAVA_HOME/bin
+
+RUN apk add --no-cache openjdk8="$JAVA_ALPINE_VERSION"
