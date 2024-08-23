@@ -1,0 +1,16 @@
+FROM alpine:3.12
+
+ENV S6_OVERLAY_VERSION v2.0.0.1
+
+RUN apk add --update --no-cache bash openssl alpine-sdk shadow \
+    && wget -qO- https://github.com/just-containers/s6-overlay/releases/download/${S6_OVERLAY_VERSION}/s6-overlay-amd64.tar.gz | tar zxvf - \
+# compile and install su-exec
+    && wget -qO- https://github.com/ncopa/su-exec/archive/v0.2.tar.gz | tar zxvf - \
+    && cd su-exec* \
+    && make \
+    && mv su-exec /usr/bin \
+    && cd .. \
+    && rm -rf su-exec* \
+    && apk del --no-cache openssl alpine-sdk
+
+ENTRYPOINT ["/init"]
