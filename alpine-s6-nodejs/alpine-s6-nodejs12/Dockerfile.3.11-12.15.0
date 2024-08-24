@@ -1,0 +1,5 @@
+FROM prireg:5000/alpine-s6-overlay:3.11-1.21.8.0
+
+ENV NODE_VERSION 12.15.0-r1
+
+RUN apk add --no-cache nodejs="$NODE_VERSION"
