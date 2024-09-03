@@ -1,0 +1,49 @@
+# s6-overlay를 포함한 Alpine Linux 기반의 베이스 이미지 사용
+FROM prireg:5000/alpine-s6-overlay:3.10-1.21.8.0
+
+# 타임존 설정
+ENV TZ=Asia/Seoul
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Docker 빌드 시 UID와 GID가 지정되지 않으면 기본값으로 설정
+ARG DEFAULT_GID=1000
+ARG DEFAULT_UID=1000
+ARG GID=$DEFAULT_GID
+ARG UID=$DEFAULT_UID
+
+# MariaDB 구성 디렉터리 및 포트에 대한 환경 변수 설정
+ENV MARIADB_USER=mariadb \
+    MARIADB_CONF_DIR=/etc/mariadb \
+    MARIADB_LOG_DIR=/var/log/mariadb \
+    MARIADB_DATA_DIR=/mariadb \
+    MARIADB_PORT=3306
+
+# MariaDB 사용자 추가 및 필요한 디렉터리 생성
+RUN set -ex; \
+    addgroup -g $GID $MARIADB_USER; \
+    adduser -u $UID -D -G $MARIADB_USER $MARIADB_USER; \
+    mkdir -p $MARIADB_CONF_DIR $MARIADB_LOG_DIR $MARIADB_DATA_DIR; \
+    chown -R $MARIADB_USER:$MARIADB_USER $MARIADB_CONF_DIR $MARIADB_LOG_DIR $MARIADB_DATA_DIR
+
+# MariaDB Configuration 복사
+COPY --chown=$MARIADB_USER:$MARIADB_USER ./files/my.cnf "$MARIADB_CONF_DIR"
+
+# EntryPoint 스크립트 복사
+COPY --chmod=755 docker-entrypoint.sh /usr/local/bin/
+
+# MariaDB 설치 및 Configuration 심볼릭 링크 설정
+RUN set -ex; \
+    apk add --no-cache --update mariadb mariadb-client; \
+    ln -sf "$MARIADB_CONF_DIR"/my.cnf /etc/my.cnf
+
+# 기본 MariaDB Port
+EXPOSE $MARIADB_PORT
+
+# 컨테이너 내에서 기본 작업 디렉터리 설정
+WORKDIR $MARIADB_DATA_DIR
+
+# MariaDB 사용자로 컨테이너 실행
+#USER $MARIADB_USER
+
+# EntryPoint 설정
+ENTRYPOINT ["docker-entrypoint.sh"]
